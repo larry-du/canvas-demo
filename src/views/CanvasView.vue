@@ -108,6 +108,9 @@ const changeStrokeColor = (strokeColor) => {
       @mousedown="drawStart"
       @mousemove="drawOn"
       @mouseup="drawEnd"
+      @touchstart.passive="drawStart"
+      @touchmove.passive="drawOn"
+      @touchend.passive="drawEnd"
     ></canvas>
 
     <div class="style-edit">
