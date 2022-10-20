@@ -21,23 +21,18 @@ const initCanvas = () => {
   canvasContext.value = printArea.value.getContext("2d");
 };
 
-const initMouseX = ref(0);
-const initMouseY = ref(0);
 const isDraw = ref(false);
 
-const drawStart = (event) => {
-  initMouseX.value = event.clientX;
-  initMouseY.value = event.clientY;
+const drawStart = (positionX, positionY) => {
   isDraw.value = true;
   canvasContext.value.beginPath();
-  canvasContext.value.moveTo(initMouseX.value, initMouseY.value);
+  canvasContext.value.moveTo(positionX, positionY);
 };
-
-const drawOn = (event) => {
+const drawOn = (positionX, positionY) => {
   if (!isDraw.value) return;
   canvasContext.value.lineCap = "round";
   canvasContext.value.lineJoin = "round";
-  canvasContext.value.lineTo(event.clientX, event.clientY);
+  canvasContext.value.lineTo(positionX, positionY);
   canvasContext.value.stroke();
 };
 
@@ -105,12 +100,16 @@ const changeStrokeColor = (strokeColor) => {
     <canvas
       id="print-area"
       ref="printArea"
-      @mousedown="drawStart"
-      @mousemove="drawOn"
+      @mousedown="drawStart($event.clientX, $event.clientY)"
+      @mousemove="drawOn($event.clientX, $event.clientY)"
       @mouseup="drawEnd"
-      @touchstart.passive="drawStart"
-      @touchmove.passive="drawOn"
-      @touchend.passive="drawEnd"
+      @touchstart="
+        drawStart($event.touches[0].screenX, $event.touches[0].screenY)
+      "
+      @touchmove.prevent="
+        drawOn($event.touches[0].screenX, $event.touches[0].screenY)
+      "
+      @touchend="drawEnd"
     ></canvas>
 
     <div class="style-edit">
