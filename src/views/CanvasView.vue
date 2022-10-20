@@ -1,56 +1,103 @@
 <script setup>
 import { ref, onMounted } from "vue";
 
-const printArea = ref(null);
-const initMouseX = ref(0);
-const initMouseY = ref(0);
-const isDraw = ref(false);
-const ctx = ref(null);
-const currentColor = ref("black");
-const colorChoose = ref([
+const printColor = ref([
   { title: "black", type: "black" },
   { title: "red", type: "red" },
   { title: "blue", type: "lightblue" },
   { title: "green", type: "lightgreen" },
 ]);
-const strokeWidth = ref([
-  { type: 8 },
-  { type: 16 },
-  { type: 24 },
-  { type: 32 },
-]);
+
+const canvasContext = ref(null);
+const printArea = ref(null);
 
 onMounted(() => {
   initCanvas();
 });
 
+const initCanvas = () => {
+  printArea.value.width = window.innerWidth;
+  printArea.value.height = window.innerHeight - 50;
+  canvasContext.value = printArea.value.getContext("2d");
+};
+
+const initMouseX = ref(0);
+const initMouseY = ref(0);
+const isDraw = ref(false);
+
 const drawStart = (event) => {
   initMouseX.value = event.clientX;
   initMouseY.value = event.clientY;
   isDraw.value = true;
-  ctx.value.beginPath();
-  ctx.value.moveTo(initMouseX.value, initMouseY.value);
+  canvasContext.value.beginPath();
+  canvasContext.value.moveTo(initMouseX.value, initMouseY.value);
 };
 
-const onDraw = (event) => {
+const drawOn = (event) => {
   if (!isDraw.value) return;
-  ctx.value.lineCap = "round"; //設定畫筆端點為圓的
-  ctx.value.lineJoin = "round"; //設定畫筆轉彎處為圓的
-  ctx.value.lineTo(event.clientX, event.clientY);
-  ctx.value.stroke();
+  canvasContext.value.lineCap = "round";
+  canvasContext.value.lineJoin = "round";
+  canvasContext.value.lineTo(event.clientX, event.clientY);
+  canvasContext.value.stroke();
 };
 
-const drawEnd = (event) => {
+const drawEnd = () => {
   isDraw.value = false;
+  const printBase64 = printArea.value.toDataURL();
+  stepRecord.value = [...stepRecord.value, printBase64];
+  drawStep.value++;
 };
 
-const initCanvas = () => {
-  printArea.value.width = window.innerWidth;
-  printArea.value.height = window.innerHeight - 50;
-  ctx.value = printArea.value.getContext("2d");
+const clearCurrentImage = () => {
+  canvasContext.value.clearRect(
+    0,
+    0,
+    printArea.value.width,
+    printArea.value.height
+  );
 };
 
-const test = ref(16);
+const drawStep = ref(-1);
+const stepRecord = ref([]);
+
+const drawUndo = () => {
+  const isInitImage = drawStep.value <= 0;
+  if (!isInitImage) {
+    drawStep.value--;
+    drawCurrent();
+  } else {
+    drawStep.value = -1;
+    clearCurrentImage();
+  }
+};
+const drawRedo = () => {
+  const isLatestImage = drawStep.value >= stepRecord.value.length - 1;
+  if (isLatestImage) return;
+  drawStep.value++;
+  drawCurrent();
+};
+
+const drawCurrent = () => {
+  const canvasImage = new Image();
+  canvasImage.src = stepRecord.value[drawStep.value];
+  canvasImage.onload = () => {
+    clearCurrentImage();
+    canvasContext.value.drawImage(canvasImage, 0, 0);
+  };
+};
+
+const strokeWidth = ref(1);
+const currentColor = ref("black");
+
+const changeStrokeWidth = (strokeWidth) => {
+  strokeWidth.value = strokeWidth;
+  canvasContext.value.lineWidth = strokeWidth;
+};
+
+const changeStrokeColor = (strokeColor) => {
+  canvasContext.value.strokeStyle = strokeColor;
+  currentColor.value = strokeColor;
+};
 </script>
 
 <template>
@@ -59,36 +106,40 @@ const test = ref(16);
       id="print-area"
       ref="printArea"
       @mousedown="drawStart"
-      @mousemove="onDraw"
+      @mousemove="drawOn"
       @mouseup="drawEnd"
     ></canvas>
 
     <div class="style-edit">
-      <pre>{{ test }}</pre>
-      <div class="stroke-width-choose">
-        <button
-          class="color-button"
-          v-for="currentWidth in strokeWidth"
-          :key="currentWidth.type"
-          @click="
-            (ctx.lineWidth = currentWidth.type), (test = currentWidth.type)
-          "
-        >
-          {{ currentWidth.type }}
-        </button>
-      </div>
+      <pre>{{ drawStep }}</pre>
+      <div>current stroke width: {{ strokeWidth }}px</div>
+      <input
+        type="range"
+        id="stroke-width"
+        name="stroke-width"
+        class="stroke-width"
+        step="1"
+        min="1"
+        max="32"
+        :value="strokeWidth"
+        @input.prevent="changeStrokeWidth($event.target.value)"
+      />
+
       <div class="color-choose">
-        <button
-          class="color-button"
-          @click="ctx.strokeStyle = 'white'"
-        ></button>
+        <button @click.prevent="clearCurrentImage">Clear All</button>
+        <button @click.prevent="canvasContext.strokeStyle = 'white'">
+          Eraser
+        </button>
         <button
           :style="{ 'background-color': colorType.title }"
           class="color-button"
-          v-for="colorType in colorChoose"
+          :class="{ 'color-active': currentColor === colorType.type }"
+          v-for="colorType in printColor"
           :key="colorType.title"
-          @click="ctx.strokeStyle = colorType.type"
+          @click.prevent="changeStrokeColor(colorType.type)"
         ></button>
+        <button @click.prevent="drawUndo">Undo</button>
+        <button @click.prevent="drawRedo">Redo</button>
       </div>
     </div>
   </section>
@@ -103,9 +154,15 @@ const test = ref(16);
   left: 0
   bottom: 0
   text-align: center
+
+.color-choose
+  button + button
+    margin-left: 5px
 .color-button
-  width: 100px
-  height: 100px
+  width: 50px
+  height: 50px
   border-radius: 50%
-  border: 1ps solid
+  border: 1px solid
+.color-active
+  box-shadow: 0 0 5px 5px inset white
 </style>
