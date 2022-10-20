@@ -89,9 +89,9 @@ const drawCurrent = () => {
 const strokeWidth = ref(1);
 const currentColor = ref("black");
 
-const changeStrokeWidth = (strokeWidth) => {
-  strokeWidth.value = strokeWidth;
-  canvasContext.value.lineWidth = strokeWidth;
+const changeStrokeWidth = (currentStrokeWidth) => {
+  strokeWidth.value = currentStrokeWidth;
+  canvasContext.value.lineWidth = currentStrokeWidth;
 };
 
 const changeStrokeColor = (strokeColor) => {
@@ -121,7 +121,7 @@ const changeStrokeColor = (strokeColor) => {
         min="1"
         max="32"
         :value="strokeWidth"
-        @input.prevent="changeStrokeWidth($event.target.value)"
+        @input="changeStrokeWidth($event.target.value)"
       />
 
       <div class="color-choose">
