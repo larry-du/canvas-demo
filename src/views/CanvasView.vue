@@ -38,10 +38,15 @@ const drawOn = (positionX, positionY) => {
 
 const drawEnd = () => {
   isDraw.value = false;
+  saveImageStep();
+
+};
+
+const saveImageStep = () => {
   const printBase64 = printArea.value.toDataURL();
   stepRecord.value = [...stepRecord.value, printBase64];
   drawStep.value++;
-};
+}
 
 const clearCurrentImage = () => {
   canvasContext.value.clearRect(
