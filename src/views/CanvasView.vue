@@ -2,10 +2,10 @@
 import { ref, onMounted } from "vue";
 
 const printColor = ref([
-  { title: "black", type: "black" },
-  { title: "red", type: "red" },
-  { title: "blue", type: "lightblue" },
-  { title: "green", type: "lightgreen" },
+  { type: "black" },
+  { type: "red" },
+  { type: "lightblue" },
+  { type: "lightgreen" },
 ]);
 
 const canvasContext = ref(null);
@@ -132,11 +132,11 @@ const changeStrokeColor = (strokeColor) => {
           Eraser
         </button>
         <button
-          :style="{ 'background-color': colorType.title }"
+          :style="{ 'background-color': colorType.type }"
           class="color-button"
           :class="{ 'color-active': currentColor === colorType.type }"
           v-for="colorType in printColor"
-          :key="colorType.title"
+          :key="colorType.type"
           @click.prevent="changeStrokeColor(colorType.type)"
         ></button>
         <button @click.prevent="drawUndo">Undo</button>
