@@ -19,6 +19,8 @@ const initCanvas = () => {
   printArea.value.width = window.innerWidth;
   printArea.value.height = window.innerHeight - 50;
   canvasContext.value = printArea.value.getContext("2d");
+  canvasContext.value.lineCap = "round";
+  canvasContext.value.lineJoin = "round";
 };
 
 const isDraw = ref(false);
@@ -30,8 +32,6 @@ const drawStart = (positionX, positionY) => {
 };
 const drawOn = (positionX, positionY) => {
   if (!isDraw.value) return;
-  canvasContext.value.lineCap = "round";
-  canvasContext.value.lineJoin = "round";
   canvasContext.value.lineTo(positionX, positionY);
   canvasContext.value.stroke();
 };
